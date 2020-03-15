@@ -1,8 +1,8 @@
 /**
- * VL53L0X block
- */
-//% weight=100 color=#70c0f0 icon="\uf042" block="VL53L0X"
-namespace  VL53L0X {
+* VL53L0X block
+*/
+//% weight=90 color=#1eb0f0 icon="\uf0b2"
+namespace VL53L0X {
     let i2cAddr = 0x29
     let IO_TIMEOUT = 1000
     let SYSRANGE_START = 0x00
@@ -49,13 +49,13 @@ namespace  VL53L0X {
         pins.i2cWriteNumber(i2cAddr, d, NumberFormat.UInt16BE, false)
     }
 
-    function readFlag(register: number=0x00, bit: number=0): number {
+    function readFlag(register: number = 0x00, bit: number = 0): number {
         let data = readReg(register)
         let mask = 1 << bit
         return (data & mask)
     }
 
-    function writeFlag(register: number=0x00, bit: number=0, onflag: boolean): void {
+    function writeFlag(register: number = 0x00, bit: number = 0, onflag: boolean): void {
         let data = readReg(register)
         let mask = 1 << bit
         if (onflag)
@@ -67,8 +67,7 @@ namespace  VL53L0X {
     /**
      * VL53L0X Initialize
      */
-    //% blockId="VL53L0X_INITIALIZE" block="init"
-    //% weight=80 blockGap=8
+    //% blockId="VL53L0X_INITIALIZE" block="init vl53l0x"
     export function init(): void {
         let r1 = readReg(0xc0)
         let r2 = readReg(0xc1)
@@ -90,11 +89,9 @@ namespace  VL53L0X {
         writeReg(0xff, 0x00)
         writeReg(0x80, 0x00)
 
-        // disable signal_rate_msrc and signal_rate_pre_range limit checks
         writeFlag(MSRC_CONFIG, 1, true)
         writeFlag(MSRC_CONFIG, 4, true)
 
-        // rate_limit = 0.25
         writeReg16(FINAL_RATE_RTN_LIMIT, Math.floor(0.25 * (1 << 7)))
 
         writeReg(SYSTEM_SEQUENCE, 0xff)
@@ -107,11 +104,11 @@ namespace  VL53L0X {
         let sp2 = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt16BE, false)
         let sp3 = pins.i2cReadNumber(i2cAddr, NumberFormat.UInt16BE, false)
         spad_map[0] = (sp1 >> 8) & 0xFF
-        spad_map[1] = sp1  & 0xFF
+        spad_map[1] = sp1 & 0xFF
         spad_map[2] = (sp2 >> 8) & 0xFF
-        spad_map[3] = sp2  & 0xFF
+        spad_map[3] = sp2 & 0xFF
         spad_map[4] = (sp3 >> 8) & 0xFF
-        spad_map[5] = sp3  & 0xFF
+        spad_map[5] = sp3 & 0xFF
 
         // set reference spads
         writeReg(0xff, 0x01)
@@ -121,7 +118,7 @@ namespace  VL53L0X {
         writeReg(REF_EN_START_SELECT, 0xb4)
 
         let spads_enabled = 0
-        for (let i=0; i<48; i++) {
+        for (let i = 0; i < 48; i++) {
             if ((i < 12 && is_aperture) || (spads_enabled >= spad_count)) {
                 spad_map[i >> 3] &= ~(1 << (i >> 2))
             } else if (spad_map[i >> 3] & (1 << (i >> 2))) {
@@ -227,8 +224,6 @@ namespace  VL53L0X {
         writeFlag(GPIO_MUX_ACTIVE_HIGH, 4, false)
         writeReg(INTERRUPT_CLEAR, 0x01)
 
-        // XXX Need to implement this.
-
         writeReg(SYSTEM_SEQUENCE, 0x01)
         if (!calibrate(0x40))
             return
@@ -241,7 +236,6 @@ namespace  VL53L0X {
     }
 
     function spad_info(): boolean {
-
         writeReg(0x80, 0x01)
         writeReg(0xff, 0x01)
         writeReg(0x00, 0x00)
@@ -280,10 +274,10 @@ namespace  VL53L0X {
         return true
     }
 
-    function calibrate(val:number): boolean {
+    function calibrate(val: number): boolean {
         writeReg(SYSRANGE_START, 0x01 | val)
         let timeout = 0
-        while ((readReg(RESULT_INTERRUPT_STATUS)  & 0x07) == 0) {
+        while ((readReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0) {
             timeout++
             basic.pause(1)
             if (timeout == IO_TIMEOUT)
@@ -295,7 +289,7 @@ namespace  VL53L0X {
         return true
     }
 
-    function startContinous(period:number=0): void {
+    function startContinous(period: number = 0): void {
         writeReg(0x80, 0x01)
         writeReg(0xFF, 0x01)
         writeReg(0x00, 0x00)
@@ -309,7 +303,7 @@ namespace  VL53L0X {
         if (oscilator) {
             period *= oscilator
             writeReg16(MEASURE_PERIOD, (period >> 16) & 0xffff)
-            pins.i2cWriteNumber(i2cAddr, period & 0xffff , NumberFormat.UInt16BE, false)
+            pins.i2cWriteNumber(i2cAddr, period & 0xffff, NumberFormat.UInt16BE, false)
             writeReg(SYSRANGE_START, 0x04)
         } else {
             writeReg(SYSRANGE_START, 0x02)
@@ -329,7 +323,7 @@ namespace  VL53L0X {
 
     function readContinousDistance(): number {
         let timeout = 0
-        while ((readReg(RESULT_INTERRUPT_STATUS)  & 0x07) == 0) {
+        while ((readReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0) {
             timeout++
             basic.pause(1)
             if (timeout == IO_TIMEOUT)
@@ -344,7 +338,6 @@ namespace  VL53L0X {
      * Read Distance
      */
     //% blockId="VL53L0X_DISTANCE" block="distance"
-    //% weight=80 blockGap=8
     export function readSingleDistance(): number {
         let timeout = 0
         if (!started) {
@@ -356,7 +349,7 @@ namespace  VL53L0X {
             writeReg(0xFF, 0x00)
             writeReg(0x80, 0x00)
             writeReg(SYSRANGE_START, 0x01)
-            while (readReg(SYSRANGE_START)  & 0x01) {
+            while (readReg(SYSRANGE_START) & 0x01) {
                 timeout++
                 basic.pause(1)
                 if (timeout == IO_TIMEOUT)
@@ -365,7 +358,7 @@ namespace  VL53L0X {
         }
 
         timeout = 0
-        while ((readReg(RESULT_INTERRUPT_STATUS)  & 0x07) == 0) {
+        while ((readReg(RESULT_INTERRUPT_STATUS) & 0x07) == 0) {
             timeout++
             basic.pause(1)
             if (timeout == IO_TIMEOUT)
@@ -377,12 +370,11 @@ namespace  VL53L0X {
         return value
     }
     //% blockId="STRING_DISTANCE" block="s_distance"
-    //% weight=80 blockGap=8
     export function stringDistance(): string {
         let d = readSingleDistance()
         let d1 = Math.floor(d / 10)
         let d2 = Math.floor(d - (d1 * 10))
-        let s = `${d1}` + '.' + `${d2}`
+        let s = `${d1}` + '.' + `${d2}` + " cm "
         return s
     }
 }
